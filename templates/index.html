@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Trend Analysis{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-br from-gray-900 to-gray-800 py-16 text-center">
+    <div class="container mx-auto px-4">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Stock Trend Analysis</h1>
+        <p class="text-lg md:text-xl text-gray-300 mb-8">Analyze stock trends with advanced technical indicators and interactive visualizations</p>
+    </div>
+</section>
+
+<!-- Main Content -->
+<div class="container mx-auto px-4 py-10">
+    <div class="max-w-2xl mx-auto mb-10">
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8">
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">Start Your Analysis</h2>
+            <form action="{{ url_for('analyze') }}" method="post" class="space-y-6">
+                <div>
+                    <label for="ticker" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Select Stock</label>
+                    <select id="ticker" name="ticker" required class="block w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Choose a stock...</option>
+                        {% for stock in stock_names %}
+                        <option value="{{ stock }}" {% if ticker==stock %}selected{% endif %}>{{ stock }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="period" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Analysis Period</label>
+                    <select id="period" name="period" class="block w-full rounded-lg border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+                        <option value="1mo" {% if period=='1mo' %}selected{% endif %}>1 Month</option>
+                        <option value="3mo" {% if period=='3mo' %}selected{% endif %}>3 Months</option>
+                        <option value="6mo" {% if period=='6mo' %}selected{% endif %}>6 Months</option>
+                        <option value="1y" {% if period=='1y' or not period %}selected{% endif %}>1 Year</option>
+                        <option value="2y" {% if period=='2y' %}selected{% endif %}>2 Years</option>
+                        <option value="5y" {% if period=='5y' %}selected{% endif %}>5 Years</option>
+                    </select>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-green-400 text-white font-semibold rounded-lg shadow hover:from-blue-600 hover:to-green-500 transition">
+                        <i class="fas fa-chart-line mr-2"></i>Analyze Stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow p-6 text-center">
+            <i class="fas fa-chart-candlestick fa-3x mb-3 text-blue-500"></i>
+            <h3 class="text-lg font-bold mb-2 text-gray-900 dark:text-white">Candlestick Charts</h3>
+            <p class="text-gray-500">Interactive price charts with technical indicators</p>
+        </div>
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow p-6 text-center">
+            <i class="fas fa-calculator fa-3x mb-3 text-green-500"></i>
+            <h3 class="text-lg font-bold mb-2 text-gray-900 dark:text-white">Technical Analysis</h3>
+            <p class="text-gray-500">RSI, MACD, and Moving Averages</p>
+        </div>
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow p-6 text-center">
+            <i class="fas fa-chart-bar fa-3x mb-3 text-purple-500"></i>
+            <h3 class="text-lg font-bold mb-2 text-gray-900 dark:text-white">Market Statistics</h3>
+            <p class="text-gray-500">Key metrics and performance indicators</p>
+        </div>
+    </div>
+
+    {% if plot_div %}
+    <!-- Analysis Results Section -->
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 mb-10">
+        <!-- Key Statistics -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {% for key, value in stats.items() %}
+            <div class="bg-blue-50 dark:bg-blue-900 rounded-xl shadow p-6 flex items-center space-x-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300">
+                    <i class="fas fa-chart-line text-xl"></i>
+                </div>
+                <div>
+                    <h5 class="text-gray-500 dark:text-gray-300 text-sm font-medium">{{ key }}</h5>
+                    <p class="text-gray-900 dark:text-white text-lg font-bold">{{ value }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <!-- Chart Container -->
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-xl shadow p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Price Analysis</h3>
+                <button class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-expand mr-1"></i>Fullscreen
+                </button>
+            </div>
+            <div class="w-full h-96" id="stock-chart">
+                {{ plot_div | safe }}
+            </div>
+        </div>
+        <!-- Additional Analysis -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-blue-50 dark:bg-blue-900 rounded-xl shadow p-6 flex items-start">
+                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300 mr-4">
+                    <i class="fas fa-trend-up text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Trend Analysis</h3>
+                    <p class="text-gray-500 mb-2">Detailed analysis of price trends and patterns</p>
+                    <ul class="list-disc list-inside text-gray-500">
+                        <li>Moving Averages</li>
+                        <li>Support/Resistance Levels</li>
+                        <li>Trend Indicators</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="bg-blue-50 dark:bg-blue-900 rounded-xl shadow p-6 flex items-start">
+                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300 mr-4">
+                    <i class="fas fa-chart-bar text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Volume Analysis</h3>
+                    <p class="text-gray-500 mb-2">Analysis of trading volume and market activity</p>
+                    <ul class="list-disc list-inside text-gray-500">
+                        <li>Volume Trends</li>
+                        <li>Market Depth</li>
+                        <li>Liquidity Analysis</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

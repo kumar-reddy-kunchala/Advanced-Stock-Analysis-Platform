@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results - Stock Analysis{% endblock %}
+
+{% block content %}
+<div class="analysis-container">
+    <!-- Header -->
+    <div class="analysis-header">
+        <div class="header-content">
+            <h1>Analysis Results for {{ ticker }}</h1>
+            <p class="header-subtitle">Period: {{ period }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Key Statistics -->
+    <div class="stats-section">
+        <h2 class="section-title">Key Statistics</h2>
+        <div class="row gy-4 gx-3">
+            {% for key, value in stats.items() %}
+            <div class="col-lg-4 col-md-6 col-12 d-flex">
+                <div class="stat-card w-100 h-100">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h5>{{ key }}</h5>
+                        <p class="mb-0">{{ value }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Price Chart -->
+    <div class="chart-section">
+        <div class="chart-header">
+            <h2 class="section-title">Price Analysis</h2>
+            <div class="chart-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="toggleFullscreen()">
+                    <i class="fas fa-expand me-1"></i>Fullscreen
+                </button>
+            </div>
+        </div>
+        <div class="chart-wrapper">
+            <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+            <div class="chart-container" id="stock-chart">
+                {{ plot_div | safe }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Analysis -->
+    <div class="additional-analysis">
+        <h2 class="section-title">Additional Analysis</h2>
+        <div class="row gy-4 gx-3">
+            <div class="col-md-6 col-12 d-flex">
+                <div class="analysis-card w-100 h-100">
+                    <div class="card-icon">
+                        <i class="fas fa-trend-up"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Trend Analysis</h3>
+                        <p>Detailed analysis of price trends and patterns</p>
+                        <ul class="analysis-list">
+                            <li>Moving Averages</li>
+                            <li>Support/Resistance Levels</li>
+                            <li>Trend Indicators</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-12 d-flex">
+                <div class="analysis-card w-100 h-100">
+                    <div class="card-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Volume Analysis</h3>
+                        <p>Analysis of trading volume and market activity</p>
+                        <ul class="analysis-list">
+                            <li>Volume Trends</li>
+                            <li>Market Depth</li>
+                            <li>Liquidity Analysis</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reuse your existing styles and scripts from earlier -->
+<style>
+/* Keep all your previous CSS here unchanged, except below updates */
+.stat-card, .analysis-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100%;
+    width: 100%;
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .stat-card, .analysis-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px;
+    }
+
+    .card-icon, .stat-icon {
+        margin-bottom: 10px;
+    }
+
+    .chart-wrapper {
+        height: 350px;
+    }
+}
+
+@media (max-width: 576px) {
+    .stat-content h5, .card-content h3 {
+        font-size: 1rem;
+    }
+
+    .stat-content p, .card-content p {
+        font-size: 0.9rem;
+    }
+
+    .analysis-container {
+        padding: 15px;
+    }
+}
+
+.chart-wrapper {
+    width: 100%;
+    height: 500px;
+    position: relative;
+    background: var(--card-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.chart-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: block;
+    flex: 1;
+}
+.chart-container > div,
+.chart-container .js-plotly-plot,
+.chart-container .plot-container,
+.chart-container .main-svg {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+}
+@media (max-width: 992px) {
+    .chart-wrapper {
+        height: 350px;
+    }
+}
+@media (max-width: 576px) {
+    .chart-wrapper {
+        height: 250px;
+    }
+}
+</style>
+
+<script>
+function toggleFullscreen() {
+    const chartWrapper = document.querySelector('.chart-wrapper');
+    if (!document.fullscreenElement) {
+        chartWrapper.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+// Resize support
+window.addEventListener('resize', function () {
+    const chart = document.querySelector('#stock-chart .js-plotly-plot');
+    if (chart) {
+        Plotly.Plots.resize(chart);
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const chart = document.querySelector('#stock-chart .js-plotly-plot');
+    if (chart) {
+        Plotly.Plots.resize(chart);
+    }
+});
+
+const resizeObserver = new ResizeObserver(entries => {
+    const chart = document.querySelector('#stock-chart .js-plotly-plot');
+    if (chart) {
+        Plotly.Plots.resize(chart);
+    }
+});
+const chartContainer = document.querySelector('#stock-chart');
+if (chartContainer) {
+    resizeObserver.observe(chartContainer);
+}
+</script>
+{% endblock %}

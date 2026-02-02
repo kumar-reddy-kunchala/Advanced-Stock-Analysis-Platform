@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Future Stock Prediction{% endblock %}
+
+{% block content %}
+<div class="future-container">
+    <div class="future-header">
+        <h1>Future Stock Price Prediction</h1>
+        <p class="header-subtitle">Predict future prices for your selected stock</p>
+    </div>
+    <div class="alert alert-info mb-4" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        This prediction is for demonstration purposes and uses a placeholder model. In a real application, this would use a trained machine learning model.
+    </div>
+    <div class="future-form-section">
+        <form action="{{ url_for('future_prediction') }}" method="post" class="future-form">
+            <div class="mb-4">
+                <label for="ticker" class="form-label">Select Stock</label>
+                <select class="form-select" id="ticker" name="ticker" required>
+                    <option value="">Choose a stock...</option>
+                    {% for stock in stock_names %}
+                    <option value="{{ stock }}" {% if ticker==stock %}selected{% endif %}>{{ stock }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="days" class="form-label">Days to Predict</label>
+                <input type="number" class="form-control" id="days" name="days" min="1" max="30" value="{{ days if days else 7 }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-forward me-2"></i>Predict Future
+            </button>
+        </form>
+    </div>
+    {% if prediction %}
+    <div class="future-results mt-5">
+        <h2 class="mb-3">Predicted Prices for <span class="text-primary">{{ ticker }}</span></h2>
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary text-white"><i class="fas fa-arrow-up"></i></div>
+                    <div class="stat-content">
+                        <h6>Max Price</h6>
+                        <p class="mb-0">${{ '%.2f'|format(prediction|map(attribute=1)|max) }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon bg-success text-white"><i class="fas fa-arrow-down"></i></div>
+                    <div class="stat-content">
+                        <h6>Min Price</h6>
+                        <p class="mb-0">${{ '%.2f'|format(prediction|map(attribute=1)|min) }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-icon bg-info text-white"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-content">
+                        <h6>Average Price</h6>
+                        <p class="mb-0">${{ '%.2f'|format(prediction|map(attribute=1)|sum / prediction|length) }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chart-section mb-4">
+            <div id="future-chart" style="width:100%;height:400px;"></div>
+        </div>
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Predicted Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for date, price in prediction %}
+                <tr {% if loop.first %}class="table-success"{% elif loop.last %}class="table-warning"{% endif %}>
+                    <td>{{ date }}</td>
+                    <td>${{ '%.2f'|format(price) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-secondary mt-4" role="alert">
+        <i class="fas fa-search me-2"></i>
+        Please select a stock and number of days, then click <b>Predict Future</b> to see results.
+    </div>
+    {% endif %}
+</div>
+{% if prediction %}
+{% block extra_js %}
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<script>
+(function() {
+    let dates = {{ prediction|map(attribute=0)|list|tojson }};
+    let prices = {{ prediction|map(attribute=1)|list|tojson }};
+    let trace = {
+        x: dates,
+        y: prices,
+        type: 'scatter',
+        mode: 'lines+markers',
+        marker: { color: '#3498db', size: 8 },
+        line: { shape: 'spline', color: '#3498db', width: 3 },
+        name: 'Predicted Price'
+    };
+    let layout = {
+        title: { text: 'Future Price Prediction', font: { size: 22, color: '#222' } },
+        xaxis: { 
+            title: { text: 'Date', font: { color: '#222', size: 16 } }, 
+            tickangle: -45, 
+            tickfont: { size: 12, color: '#222' } 
+        },
+        yaxis: { 
+            title: { text: 'Predicted Price ($)', font: { color: '#222', size: 16 } }, 
+            tickprefix: '$', 
+            tickfont: { size: 12, color: '#222' } 
+        },
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#222' },
+        margin: { t: 60, l: 60, r: 30, b: 80 },
+        showlegend: true
+    };
+    Plotly.newPlot('future-chart', [trace], layout, {responsive: true});
+})();
+</script>
+{% endblock %}
+{% endif %}
+<style>
+.future-container {
+    max-width: 800px;
+    margin: 40px auto;
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 40px 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-color);
+}
+.future-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.future-header h1 {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 2.2rem;
+}
+.header-subtitle {
+    color: var(--light-text);
+    font-size: 1.1rem;
+}
+.future-form-section {
+    margin-bottom: 30px;
+}
+.stat-card {
+    background: var(--background-color);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid var(--border-color);
+}
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-right: 10px;
+}
+.chart-section {
+    background: var(--background-color);
+    border-radius: 12px;
+    padding: 20px 10px 10px 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid var(--border-color);
+}
+.future-results h2 {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+}
+.table-success td {
+    background-color: #d4edda !important;
+}
+.table-warning td {
+    background-color: #fff3cd !important;
+}
+</style>
+{% endblock %} 
